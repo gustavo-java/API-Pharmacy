@@ -1,3 +1,4 @@
+import ProductPrice, { PrescriptionBadge } from "./ProductPrice";
 import { useState } from "react";
 import { Download, FileSpreadsheet, UploadCloud } from "lucide-react";
 import { Modal } from "./ProductForm";
@@ -9,7 +10,7 @@ export default function ProductImport({ onClose, onImported }) {
   const [filename, setFilename] = useState("");
   function downloadModel() {
     const data =
-      "\uFEFFnome;descricao;preco;estoque;fotos\r\nVitamina C;30 comprimidos;29,90;20;\r\n";
+      "\uFEFFnome;descricao;preco;estoque;fotos;desconto;exige_receita\r\nVitamina C;30 comprimidos;29,90;20;;0;nao\r\n";
     const url = URL.createObjectURL(
       new Blob([data], { type: "text/csv;charset=utf-8" }),
     );
@@ -69,8 +70,9 @@ export default function ProductImport({ onClose, onImported }) {
             <strong>CSV ou XLSX • até 1.000 produtos • 2 MB</strong>
             <p>
               Use uma única aba com as colunas nome, descricao, preco, estoque e
-              fotos (opcional). No preço, use 29,90 ou 29.90, sem separador de
-              milhar. Separe URLs de fotos com |.
+              fotos, desconto e exige_receita (opcionais). Use sim/não para
+              exige_receita e 0 a 100 para desconto. No preço, use 29,90 ou
+              29.90, sem separador de milhar. Separe URLs de fotos com |.
             </p>
           </div>
         </div>
@@ -115,12 +117,12 @@ export default function ProductImport({ onClose, onImported }) {
                 <tbody>
                   {preview.products.slice(0, 20).map((p, i) => (
                     <tr key={i}>
-                      <td>{p.name}</td>
                       <td>
-                        {p.price.toLocaleString("pt-BR", {
-                          style: "currency",
-                          currency: "BRL",
-                        })}
+                        {p.name}
+                        <PrescriptionBadge product={p} />
+                      </td>
+                      <td>
+                        <ProductPrice product={p} />
                       </td>
                       <td>{p.stock}</td>
                       <td>{p.imageUrls.length}</td>

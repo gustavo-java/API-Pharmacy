@@ -18,7 +18,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "postinstall": "prisma skills sync || exit 0"
+    "postinstall": "prisma skills sync || exit 0",
+    "test:products": "npm run build && node --test test/medicine-prescription.integration.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",

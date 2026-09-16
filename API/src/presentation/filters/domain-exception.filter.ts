@@ -15,6 +15,7 @@ export class DomainExceptionFilter implements ExceptionFilter {
       ENTITY_NOT_FOUND: HttpStatus.NOT_FOUND,
       INSUFFICIENT_STOCK: HttpStatus.BAD_REQUEST,
       CONFLICT: HttpStatus.CONFLICT,
+      PRESCRIPTION_REQUIRED: HttpStatus.BAD_REQUEST,
     }[error.code];
 
     response.status(status).json({

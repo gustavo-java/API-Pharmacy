@@ -18,6 +18,8 @@ const columns: Record<string, string> = {
   preco: 'price',
   estoque: 'stock',
   fotos: 'imageUrls',
+  desconto: 'discountPercentage',
+  exige_receita: 'requiresPrescription',
 };
 
 // Inspect XLSX ZIP metadata before decompression to bound spreadsheet resource use.
@@ -52,7 +54,7 @@ export class ProductImportService {
   async preview(file?: { originalname: string; buffer: Buffer }) {
     if (!file?.buffer.length)
       throw new BadRequestException('Selecione uma planilha CSV ou XLSX.');
-    let rows: (string | number)[][];
+    let rows: (string | number | boolean)[][];
     try {
       if (/\.csv$/i.test(file.originalname)) {
         const content = new TextDecoder('utf-8', { fatal: true }).decode(
@@ -75,17 +77,18 @@ export class ProductImportService {
         if (workbook.worksheets.length !== 1)
           throw new Error('Use apenas uma aba na planilha.');
         const sheet = workbook.worksheets[0];
-        if (sheet.rowCount > 1001 || sheet.columnCount > 5)
-          throw new Error('Use até 1.000 produtos e as 5 colunas do modelo.');
+        if (sheet.rowCount > 1001 || sheet.columnCount > 7)
+          throw new Error('Use até 1.000 produtos e até 7 colunas do modelo.');
         rows = [];
         sheet.eachRow({ includeEmpty: true }, (row) => {
-          const cells: (string | number)[] = [];
+          const cells: (string | number | boolean)[] = [];
           for (let col = 1; col <= sheet.columnCount; col++) {
             const value = row.getCell(col).value;
             if (
               value !== null &&
               typeof value !== 'string' &&
-              typeof value !== 'number'
+              typeof value !== 'number' &&
+              typeof value !== 'boolean'
             )
               throw new Error(
                 'Fórmulas, datas e células especiais não são aceitas. Use valores simples.',
@@ -117,7 +120,7 @@ export class ProductImportService {
       )
     ) {
       throw new BadRequestException(
-        'Use as colunas nome, descricao, preco, estoque e, opcionalmente, fotos. Não repita colunas.',
+        'Use as colunas nome, descricao, preco, estoque e, opcionalmente, fotos, desconto e exige_receita. Não repita colunas.',
       );
     }
     const products: CreateMedicineDto[] = [];
@@ -125,7 +128,7 @@ export class ProductImportService {
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i];
       if (row.every((value) => value === '' || value === null)) continue;
-      const raw: Record<string, string | number> = Object.fromEntries(
+      const raw: Record<string, string | number | boolean> = Object.fromEntries(
         headers.map((field, index) => [field, row[index] ?? '']),
       );
       const data: Record<string, unknown> = { ...raw };
@@ -143,6 +146,19 @@ export class ProductImportService {
             .map((url) => url.trim())
             .filter(Boolean)
         : [];
+      const discount = String(raw.discountPercentage ?? '').trim();
+      data.discountPercentage =
+        discount === ''
+          ? 0
+          : /^\d+(?:[.,]\d{1,2})?$/.test(discount)
+            ? Number(discount.replace(',', '.'))
+            : NaN;
+      const requires = normalize(String(raw.requiresPrescription ?? 'false'));
+      data.requiresPrescription = ['true', 'sim', '1'].includes(requires)
+        ? true
+        : ['false', 'nao', '0', ''].includes(requires)
+          ? false
+          : requires;
       const product = plainToInstance(CreateMedicineDto, data);
       const violations = await validate(product, {
         whitelist: true,
@@ -150,6 +166,8 @@ export class ProductImportService {
       });
       if (violations.length) {
         const labels: Record<string, string> = {
+          requiresPrescription: 'exige_receita (sim/não ou true/false)',
+          discountPercentage: 'desconto (0 a 100, até 2 casas decimais)',
           name: 'nome',
           description: 'descrição',
           price:

@@ -26,6 +26,8 @@ model Medicine {
   price       Float
   stock       Int
   imageUrls   String[] @default([])
+  requiresPrescription Boolean @default(false)
+  discountPercentage Float @default(0)
 
   prescriptions Prescription[]
 }
@@ -36,6 +38,7 @@ model Prescription {
   userId     Int
   medicineId Int
   quantity   Int
+  prescriptionReference String?
   date       DateTime @default(now())
 
   user     User     @relation(fields: [userId], references: [id])

@@ -1,3 +1,4 @@
+import ProductPrice, { finalPrice, PrescriptionBadge } from "./ProductPrice";
 import UserManagement from "./UserManagement";
 import ProductImport from "./ProductImport";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -207,7 +208,7 @@ function Portal({ user, onLogout, onCurrentUserChanged }) {
       units: products.reduce((s, p) => s + p.stock, 0),
       low: products.filter((p) => p.stock > 0 && p.stock <= 10).length,
       empty: products.filter((p) => p.stock === 0).length,
-      value: products.reduce((s, p) => s + p.price * p.stock, 0),
+      value: products.reduce((s, p) => s + finalPrice(p) * p.stock, 0),
     }),
     [products],
   );
@@ -232,7 +233,7 @@ function Portal({ user, onLogout, onCurrentUserChanged }) {
         sort === "name"
           ? a.name.localeCompare(b.name, "pt-BR")
           : sort === "price"
-            ? a.price - b.price
+            ? finalPrice(a) - finalPrice(b)
             : sort === "stock"
               ? a.stock - b.stock
               : b.id - a.id,
@@ -290,7 +291,17 @@ function Portal({ user, onLogout, onCurrentUserChanged }) {
         .replace(/^[=+@\-\t\r]/, "'$&")
         .replaceAll('"', '""')}"`;
     const rows = [
-      ["ID", "Produto", "Descrição", "Preço (R$)", "Estoque", "Fotos"],
+      [
+        "ID",
+        "Produto",
+        "Descrição",
+        "Preço original (R$)",
+        "Estoque",
+        "Fotos",
+        "Desconto (%)",
+        "Preço final (R$)",
+        "Exige receita",
+      ],
       ...filtered.map((p) => [
         p.id,
         p.name,
@@ -298,6 +309,9 @@ function Portal({ user, onLogout, onCurrentUserChanged }) {
         p.price.toFixed(2).replace(".", ","),
         p.stock,
         (p.imageUrls || []).join(" | "),
+        p.discountPercentage ?? 0,
+        finalPrice(p).toFixed(2).replace(".", ","),
+        p.requiresPrescription ? "Sim" : "Não",
       ]),
     ];
     const blob = new Blob(
@@ -744,8 +758,9 @@ function Portal({ user, onLogout, onCurrentUserChanged }) {
                               {product.name}
                             </button>
                             <p>{product.description}</p>
+                            <PrescriptionBadge product={product} />
                             <div className="product-numbers">
-                              <strong>{money(product.price)}</strong>
+                              <ProductPrice product={product} />
                               <span>
                                 <Boxes size={14} />
                                 {count(product.stock)} un.
@@ -820,11 +835,12 @@ function Portal({ user, onLogout, onCurrentUserChanged }) {
                                 </button>
                               </td>
                               <td className="price-cell">
-                                {money(product.price)}
+                                <ProductPrice product={product} />
                               </td>
                               <td>{count(product.stock)} un.</td>
                               <td>
                                 <StockBadge stock={product.stock} />
+                                <PrescriptionBadge product={product} />
                               </td>
                               <td>
                                 <div className="table-actions">
@@ -1232,8 +1248,9 @@ function ProductDetail({ product, canEdit, onClose, onEdit }) {
         </span>
         <h2>{product.name}</h2>
         <p className="detail-description">{product.description}</p>
+        <PrescriptionBadge product={product} />
         <div className="detail-price">
-          <strong>{money(product.price)}</strong>
+          <ProductPrice product={product} />
           <StockBadge stock={product.stock} />
         </div>
         <p className="muted">{count(product.stock)} unidades em estoque</p>

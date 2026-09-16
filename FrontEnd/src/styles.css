@@ -2639,3 +2639,66 @@ td {
     margin-inline: 16px;
   }
 }
+
+.price-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #eff5ff;
+  margin-bottom: 18px;
+}
+.price-preview span {
+  font-size: 11px;
+  color: #7086ae;
+}
+.price-preview output {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2158e8;
+}
+.price-preview small {
+  font-size: 9px;
+  color: #8496b4;
+}
+.prescription-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0 8px;
+}
+.prescription-toggle input {
+  width: 17px;
+  height: 17px;
+  margin: 0;
+  accent-color: #2158e8;
+}
+.prescription-toggle span {
+  color: #41506b;
+}
+.prescription-help {
+  margin-bottom: 24px;
+}
+.product-pricing {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.original-price {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 10px;
+  color: #8b97aa;
+}
+.discount-label {
+  color: #279268;
+  font-size: 9px;
+}
+.prescription-badge {
+  display: block;
+  margin: 8px 0;
+  font-size: 9px;
+  color: #a26c32;
+}

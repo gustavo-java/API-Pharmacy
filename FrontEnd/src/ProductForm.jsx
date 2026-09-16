@@ -106,6 +106,17 @@ export function ProductImage({ url, name, ...props }) {
 }
 
 export default function ProductForm({ product, onClose, onSaved }) {
+  const [price, setPrice] = useState(product?.price ?? "");
+  const [discount, setDiscount] = useState(product?.discountPercentage ?? 0);
+  const [requiresPrescription, setRequiresPrescription] = useState(
+    product?.requiresPrescription ?? false,
+  );
+  const finalPrice =
+    Math.round(
+      (Math.round(Number(price) * 100) *
+        (10000 - Math.round(Number(discount) * 100))) /
+        10000,
+    ) / 100;
   const [images, setImages] = useState(product?.imageUrls || []);
   const [imageMode, setImageMode] = useState("upload");
   const [url, setUrl] = useState("");
@@ -189,6 +200,8 @@ export default function ProductForm({ product, onClose, onSaved }) {
           name: data.name.trim(),
           description: data.description.trim(),
           price: Number(data.price),
+          discountPercentage: Number(discount),
+          requiresPrescription,
           stock: Number(data.stock),
           imageUrls: images,
         },
@@ -241,7 +254,8 @@ export default function ProductForm({ product, onClose, onSaved }) {
                 <input
                   type="number"
                   name="price"
-                  defaultValue={product?.price}
+                  value={price}
+                  onChange={(e) => setPrice(e.target.value)}
                   placeholder="0,00"
                   required
                   min="0"
@@ -262,6 +276,47 @@ export default function ProductForm({ product, onClose, onSaved }) {
                 />
               </label>
             </div>
+            <div className="form-columns">
+              <label>
+                Desconto (%)
+                <input
+                  type="number"
+                  name="discountPercentage"
+                  value={discount}
+                  onChange={(e) => setDiscount(e.target.value)}
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  required
+                />
+              </label>
+              <div className="price-preview">
+                <span>Preço final</span>
+                <output aria-live="polite">
+                  {Number.isFinite(finalPrice) &&
+                  Number(discount) >= 0 &&
+                  Number(discount) <= 100
+                    ? finalPrice.toLocaleString("pt-BR", {
+                        style: "currency",
+                        currency: "BRL",
+                      })
+                    : "—"}
+                </output>
+                <small>Calculado sobre o preço original</small>
+              </div>
+            </div>
+            <label className="prescription-toggle">
+              <input
+                type="checkbox"
+                checked={requiresPrescription}
+                onChange={(e) => setRequiresPrescription(e.target.checked)}
+              />
+              <span>Exige receita médica</span>
+            </label>
+            <p className="field-help prescription-help">
+              Produtos marcados exigem uma referência de receita ao registrar a
+              prescrição.
+            </p>
             <div className="section-label photo-heading">
               <ImagePlus size={17} /> FOTOS DO PRODUTO{" "}
               <span>{images.length}/6</span>

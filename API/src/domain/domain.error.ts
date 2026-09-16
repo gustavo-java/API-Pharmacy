@@ -1,5 +1,8 @@
 export type DomainErrorCode =
-  'ENTITY_NOT_FOUND' | 'INSUFFICIENT_STOCK' | 'CONFLICT';
+  | 'ENTITY_NOT_FOUND'
+  | 'INSUFFICIENT_STOCK'
+  | 'CONFLICT'
+  | 'PRESCRIPTION_REQUIRED';
 
 export class DomainError extends Error {
   constructor(

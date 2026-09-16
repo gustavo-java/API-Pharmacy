@@ -536,21 +536,19 @@ test("Planilhas: CSV, XLSX, validação e importação sem gravação parcial", 
   sheet.addRow(["nome", "descricao", "preco", "estoque"]);
   sheet.addRow(["Produto XLSX", "Descrição XLSX", 19.9, 3]);
   const xlsxPreview = () =>
-    workbook.xlsx
-      .writeBuffer()
-      .then((buffer) =>
-        request.post("/medicines/import/preview", {
-          headers: auth(reader),
-          multipart: {
-            file: {
-              name: "produtos.xlsx",
-              mimeType:
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-              buffer: Buffer.from(buffer),
-            },
+    workbook.xlsx.writeBuffer().then((buffer) =>
+      request.post("/medicines/import/preview", {
+        headers: auth(reader),
+        multipart: {
+          file: {
+            name: "produtos.xlsx",
+            mimeType:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            buffer: Buffer.from(buffer),
           },
-        }),
-      );
+        },
+      }),
+    );
   const xlsx = await xlsxPreview();
   expect(xlsx.status()).toBe(201);
   expect((await xlsx.json()).products[0].stock).toBe(3);
@@ -571,7 +569,9 @@ test("Admin: cadastrar, editar função e excluir usuário pela interface; sem l
   let dialog = page.getByRole("dialog");
   await dialog.getByLabel("Nome", { exact: true }).fill("Equipe teste");
   await dialog.getByLabel("E-mail", { exact: true }).fill("equipe@nexo.test");
-  await dialog.getByRole("combobox", { name: "Função", exact: true }).selectOption("Farmacia");
+  await dialog
+    .getByRole("combobox", { name: "Função", exact: true })
+    .selectOption("Farmacia");
   await dialog.getByLabel("Senha inicial", { exact: true }).fill(password);
   await dialog.getByRole("button", { name: "Salvar usuário" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
@@ -579,7 +579,9 @@ test("Admin: cadastrar, editar função e excluir usuário pela interface; sem l
     .getByRole("button", { name: "Editar usuário Equipe teste" })
     .click();
   dialog = page.getByRole("dialog");
-  await dialog.getByRole("combobox", { name: "Função", exact: true }).selectOption("Usuario");
+  await dialog
+    .getByRole("combobox", { name: "Função", exact: true })
+    .selectOption("Usuario");
   await dialog.getByRole("button", { name: "Salvar usuário" }).click();
   await expect(page.getByRole("dialog")).toHaveCount(0);
   const session = await (
@@ -625,15 +627,13 @@ test("Farmácia: importar planilha pela interface, sem acesso à API ou usuário
   ).toHaveCount(0);
   await page.getByRole("button", { name: "Importar planilha" }).click();
   const dialog = page.getByRole("dialog");
-  await dialog
-    .locator("input[type=file]")
-    .setInputFiles({
-      name: "catalogo.csv",
-      mimeType: "text/csv",
-      buffer: Buffer.from(
-        "nome;descricao;preco;estoque\nProduto importado pela tela;Descrição de teste;49,90;12",
-      ),
-    });
+  await dialog.locator("input[type=file]").setInputFiles({
+    name: "catalogo.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(
+      "nome;descricao;preco;estoque\nProduto importado pela tela;Descrição de teste;49,90;12",
+    ),
+  });
   await expect(
     dialog.getByText("Produto importado pela tela", { exact: true }),
   ).toBeVisible();
@@ -654,4 +654,51 @@ test("Farmácia: importar planilha pela interface, sem acesso à API ou usuário
       exact: true,
     }),
   ).toBeVisible();
+});
+
+test("Controles de desconto e receita persistem e aparecem no catálogo", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByLabel("E-mail", { exact: true }).fill(reader.user.email);
+  await page.getByLabel("Senha", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Acessar portal" }).click();
+  await page.getByRole("button", { name: "Novo produto", exact: true }).click();
+  let dialog = page.getByRole("dialog");
+  await dialog
+    .getByLabel("Nome do produto")
+    .fill("Produto com receita e desconto");
+  await dialog
+    .getByLabel("Descrição")
+    .fill("Teste dos controles");
+  await dialog.getByLabel("Preço de venda").fill("100");
+  await dialog.getByLabel("Desconto (%)").fill("15");
+  await dialog.getByLabel("Exige receita médica", { exact: true }).check();
+  await expect(dialog.locator("output")).toContainText("85,00");
+  await dialog
+    .getByRole("button", { name: "Cadastrar produto", exact: true })
+    .click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await page.reload();
+  await page
+    .getByRole("textbox", { name: "Buscar produtos" })
+    .fill("Produto com receita e desconto");
+  const card = page.locator(".product-card");
+  await expect(card).toContainText("85,00");
+  await expect(card).toContainText("Receita médica obrigatória");
+  await card
+    .getByRole("button", { name: "Editar produto", exact: true })
+    .click();
+  dialog = page.getByRole("dialog");
+  await expect(dialog.getByLabel("Desconto (%)")).toHaveValue("15");
+  await expect(
+    dialog.getByLabel("Exige receita médica", { exact: true }),
+  ).toBeChecked();
+  await dialog.getByLabel("Desconto (%)").fill("0");
+  await dialog.getByLabel("Exige receita médica", { exact: true }).uncheck();
+  await expect(dialog.locator("output")).toContainText("100,00");
+  await dialog.getByRole("button", { name: "Salvar alterações" }).click();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+  await expect(card).not.toContainText("Receita médica obrigatória");
+  await expect(card.locator("s")).toHaveCount(0);
 });

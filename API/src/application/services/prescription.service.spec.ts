@@ -65,3 +65,24 @@ describe('PrescriptionService', () => {
     expect(createPrescription).not.toHaveBeenCalled();
   });
 });
+
+describe('prescription-required products', () => {
+  it('rejects a missing reference before any stock write', async () => {
+    const createWithStockReduction = jest.fn();
+    const service = new PrescriptionService(
+      { createWithStockReduction } as unknown as PrescriptionRepository,
+      {
+        exists: jest.fn().mockResolvedValue(true),
+      } as unknown as UserRepository,
+      {
+        findById: jest
+          .fn()
+          .mockResolvedValue({ stock: 10, requiresPrescription: true }),
+      } as unknown as MedicineRepository,
+    );
+    await expect(
+      service.create({ userId: 1, medicineId: 1, quantity: 1 }),
+    ).rejects.toMatchObject({ code: 'PRESCRIPTION_REQUIRED' });
+    expect(createWithStockReduction).not.toHaveBeenCalled();
+  });
+});

@@ -1,5 +1,6 @@
 import {
   IsInt,
+  IsBoolean,
   IsNotEmpty,
   IsNumber,
   ValidateIf,
@@ -45,7 +46,7 @@ export class CreateMedicineDto
   @MaxLength(2000)
   description: string;
 
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0)
   @Max(99999999.99)
   price: number;
@@ -54,6 +55,16 @@ export class CreateMedicineDto
   @Min(0)
   @Max(2147483647)
   stock: number;
+
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsBoolean()
+  requiresPrescription?: boolean;
+
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsNumber({ maxDecimalPlaces: 2 })
+  @Min(0)
+  @Max(100)
+  discountPercentage?: number;
 }
 
 export class UpdateMedicineDto extends PartialType(CreateMedicineDto, {

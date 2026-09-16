@@ -1,3 +1,4 @@
+import { withMedicinePricing } from '../../domain/entities/medicine';
 import { Inject, Injectable } from '@nestjs/common';
 import { DomainError } from '../../domain/domain.error';
 import type {
@@ -16,12 +17,12 @@ export class MedicineService {
     private readonly medicines: MedicineRepository,
   ) {}
 
-  create(data: CreateMedicine) {
-    return this.medicines.create(data);
+  async create(data: CreateMedicine) {
+    return withMedicinePricing(await this.medicines.create(data));
   }
 
-  findAll() {
-    return this.medicines.findAll();
+  async findAll() {
+    return (await this.medicines.findAll()).map(withMedicinePricing);
   }
 
   async findOne(id: number) {
@@ -32,7 +33,7 @@ export class MedicineService {
         `Medicamento com ID ${id} não encontrado.`,
       );
     }
-    return medicine;
+    return withMedicinePricing(medicine);
   }
 
   async update(id: number, data: UpdateMedicine) {
@@ -43,7 +44,7 @@ export class MedicineService {
         `Medicamento com ID ${id} não encontrado.`,
       );
     }
-    return medicine;
+    return withMedicinePricing(medicine);
   }
 
   async remove(id: number) {
@@ -54,6 +55,6 @@ export class MedicineService {
         `Medicamento com ID ${id} não encontrado.`,
       );
     }
-    return medicine;
+    return withMedicinePricing(medicine);
   }
 }

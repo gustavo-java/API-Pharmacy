@@ -1,4 +1,13 @@
-import { IsInt, IsOptional, IsPositive } from 'class-validator';
+import {
+  IsInt,
+  IsPositive,
+  IsString,
+  Matches,
+  MaxLength,
+  ValidateIf,
+} from 'class-validator';
+import { PartialType } from '@nestjs/mapped-types';
+import { Transform } from 'class-transformer';
 import type { CreatePrescription } from '../../domain/entities/prescription';
 
 export class CreatePrescriptionDto implements CreatePrescription {
@@ -13,21 +22,17 @@ export class CreatePrescriptionDto implements CreatePrescription {
   @IsInt()
   @IsPositive()
   quantity: number;
+
+  @ValidateIf((_object, value) => value !== undefined)
+  @IsString()
+  @Matches(/\S/)
+  @MaxLength(120)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  prescriptionReference?: string;
 }
 
-export class UpdatePrescriptionDto {
-  @IsOptional()
-  @IsInt()
-  @IsPositive()
-  userId?: number;
-
-  @IsOptional()
-  @IsInt()
-  @IsPositive()
-  medicineId?: number;
-
-  @IsOptional()
-  @IsInt()
-  @IsPositive()
-  quantity?: number;
-}
+export class UpdatePrescriptionDto extends PartialType(CreatePrescriptionDto, {
+  skipNullProperties: false,
+}) {}

@@ -1,3 +1,4 @@
+import { validatePrescriptionReference } from '../../domain/entities/prescription';
 import { Inject, Injectable } from '@nestjs/common';
 import { DomainError } from '../../domain/domain.error';
 import {
@@ -43,6 +44,7 @@ export class PrescriptionService {
         `Medicamento com ID ${data.medicineId} não encontrado.`,
       );
     }
+    validatePrescriptionReference(medicine, data.prescriptionReference);
     if (medicine.stock < data.quantity) {
       throw new DomainError(
         'INSUFFICIENT_STOCK',
